@@ -44,6 +44,7 @@ export interface AwsLambdaReceiverOptions {
   logger?: Logger;
   logLevel?: LogLevel;
   customPropertiesExtractor?: (request: AwsEvent) => StringIndexed;
+  ackTimeoutMillis?: number;
 }
 
 /*
@@ -61,11 +62,14 @@ export default class AwsLambdaReceiver implements Receiver {
 
   private customPropertiesExtractor: (request: AwsEvent) => StringIndexed;
 
+  private ackTimeoutMillis: number;
+
   public constructor({
     signingSecret,
     logger = undefined,
     logLevel = LogLevel.INFO,
     customPropertiesExtractor = (_) => ({}),
+    ackTimeoutMillis = 3001,
   }: AwsLambdaReceiverOptions) {
     // Initialize instance variables, substituting defaults for each value
     this.signingSecret = signingSecret;
@@ -76,6 +80,7 @@ export default class AwsLambdaReceiver implements Receiver {
         return defaultLogger;
       })();
     this.customPropertiesExtractor = customPropertiesExtractor;
+    this.ackTimeoutMillis = ackTimeoutMillis;
   }
 
   public init(app: App): void {
@@ -162,7 +167,7 @@ export default class AwsLambdaReceiver implements Receiver {
               'Ensure that the ack() argument is called in a listener.',
           );
         }
-      }, 3001);
+      }, this.ackTimeoutMillis);
 
       // Structure the ReceiverEvent
       let storedResponse;
